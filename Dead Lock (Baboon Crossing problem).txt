@@ -1,0 +1,114 @@
+Code :
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+sem_t east_mutex, west_mutex, crossing;
+int east_count = 0, west_count = 0;
+
+void* eastward_baboon(void* arg) {
+    sem_wait(&east_mutex);
+    east_count++;
+
+    if (west_count == 0) {
+        sem_post(&crossing);
+    }
+
+    sem_post(&east_mutex);
+    sem_wait(&crossing);
+    // Cross the canyon
+
+    sem_wait(&east_mutex);
+    east_count--;
+
+    if (east_count == 0) {
+        sem_post(&west_mutex);
+    }
+
+    sem_post(&east_mutex);
+    pthread_exit(NULL);
+}
+
+void* westward_baboon(void* arg) {
+    sem_wait(&west_mutex);
+    west_count++;
+
+    if (east_count == 0) {
+        sem_post(&crossing);
+    }
+
+    sem_post(&west_mutex);
+    sem_wait(&crossing);
+    // Cross the canyon
+
+    sem_wait(&west_mutex);
+    west_count--;
+
+    if (west_count == 0) {
+        sem_post(&east_mutex);
+    }
+
+    sem_post(&west_mutex);
+    pthread_exit(NULL);
+}
+
+int main() {
+    sem_init(&east_mutex, 0, 1);
+    sem_init(&west_mutex, 0, 1);
+    sem_init(&crossing, 0, 0);
+
+    pthread_t east_threads[5], west_threads[5];
+    
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&east_threads[i], NULL, eastward_baboon, NULL);
+        pthread_create(&west_threads[i], NULL, westward_baboon, NULL);
+    }
+
+    for (int i = 0; i < 5; i++) {
+        pthread_join(east_threads[i], NULL);
+        pthread_join(west_threads[i], NULL);
+    }
+
+    sem_destroy(&east_mutex);
+    sem_destroy(&west_mutex);
+    sem_destroy(&crossing);
+
+    return 0;
+}
+
+Algo :
+
+1. Start by including the necessary header files and defining the required variables and semaphores:
+   - `east_mutex`: a semaphore to ensure exclusive access for eastward-moving baboons.
+   - `west_mutex`: a semaphore to ensure exclusive access for westward-moving baboons.
+   - `crossing`: a semaphore to keep track of the number of baboons currently crossing the canyon.
+   - `east_count`: a counter to keep track of the number of eastward-moving baboons waiting to cross.
+   - `west_count`: a counter to keep track of the number of westward-moving baboons waiting to cross.
+
+2. Initialize the semaphores and counters:
+   - Set the value of `east_mutex` and `west_mutex` to 1.
+   - Set the value of `crossing`, `east_count`, and `west_count` to 0.
+
+3. Define the function for eastward-moving baboons:
+   - Wait on the `east_mutex` semaphore to ensure exclusive access for eastward-moving baboons.
+   - Increment the `east_count` counter to indicate that a baboon is waiting to cross.
+   - If there are no westward-moving baboons currently crossing and no westward-moving baboons waiting to cross, signal the `crossing` semaphore to allow the baboon to cross.
+   - Release the `east_mutex` semaphore.
+   - Wait on the `crossing` semaphore to indicate that the baboon is crossing the canyon.
+   - After crossing, decrement the `crossing` semaphore to indicate that the baboon has finished crossing.
+
+4. Define the function for westward-moving baboons:
+   - Wait on the `west_mutex` semaphore to ensure exclusive access for westward-moving baboons.
+   - Increment the `west_count` counter to indicate that a baboon is waiting to cross.
+   - If there are no eastward-moving baboons currently crossing and no eastward-moving baboons waiting to cross, signal the `crossing` semaphore to allow the baboon to cross.
+   - Release the `west_mutex` semaphore.
+   - Wait on the `crossing` semaphore to indicate that the baboon is crossing the canyon.
+   - After crossing, decrement the `crossing` semaphore to indicate that the baboon has finished crossing.
+
+5. In the main function:
+   - Create multiple threads representing baboons, with some threads representing eastward-moving baboons and others representing westward-moving baboons.
+   - Each thread should call the appropriate function (eastward or westward) based on its direction.
+   - Wait for all threads to complete using `pthread_join`.
+   - Return 0 to exit the program.

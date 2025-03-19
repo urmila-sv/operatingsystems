@@ -1,0 +1,35 @@
+Code:
+
+
+# Read the two numbers from the user
+read -p "Enter the first number: " num1
+read -p "Enter the second number: " num2
+
+# Addition
+add=$((num1 + num2))
+echo "Addition: $num1 + $num2 = $add"
+
+# Subtraction
+sub=$((num1 - num2))
+echo "Subtraction: $num1 - $num2 = $sub"
+
+# Multiplication
+mul=$((num1 * num2))
+echo "Multiplication: $num1 * $num2 = $mul"
+
+# Division
+div=$((num1 / num2))
+echo "Division: $num1 / $num2 = $div"
+
+Algo :
+
+1. Prompt the user to enter the first number and read it.
+2. Prompt the user to enter the second number and read it.
+3. Perform addition by adding the two numbers and store the result in the `add` variable.
+4. Print the result of addition.
+5. Perform subtraction by subtracting the second number from the first number and store the result in the `sub` variable.
+6. Print the result of subtraction.
+7. Perform multiplication by multiplying the two numbers and store the result in the `mul` variable.
+8. Print the result of multiplication.
+9. Perform division by dividing the first number by the second number and store the result in the `div` variable.
+10. Print the result of division.

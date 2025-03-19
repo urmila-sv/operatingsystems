@@ -1,0 +1,107 @@
+Bankers Algorithm:-
+
+CODE:-
+#include <stdio.h>
+int main() {
+int k = 0, a = 0, b = 0, instance[5], availability[5], allocated[10][5], need[10][5], MAX[10][5], process, P[10], 
+no_of_resources, cnt = 0, i, j;
+printf("\n Enter the number of resources: ");
+scanf("%d", &no_of_resources);
+printf("\n enter the max instances of each resource\n");
+for (i = 0; i < no_of_resources; i++) {
+availability[i] = 0;
+printf("%c= ", (i + 97));
+scanf("%d", &instance[i]);
+}
+printf("\n Enter the number of processes: ");
+scanf("%d", &process);
+printf("\n Enter the allocation matrix\n ");
+for (i = 0; i < no_of_resources; i++)
+printf(" %c", (i + 97));
+printf("\n");
+for (i = 0; i < process; i++) {
+P[i] = i;
+printf("P[%d] ", P[i]);
+for (j = 0; j < no_of_resources; j++) {
+scanf("%d", &allocated[i][j]);
+availability[j] += allocated[i][j];
+}
+}
+printf("\n Enter the MAX matrix\n ");
+for (i = 0; i < no_of_resources; i++) {
+printf(" %c", (i + 97));
+availability[i] = instance[i] - availability[i];
+}
+printf("\n");
+for (i = 0; i < process; i++) {
+printf("P[%d] ", i);
+for (j = 0; j < no_of_resources; j++)
+scanf("%d", &MAX[i][j]);
+}
+printf("\n");
+int op[10];
+a = -1;
+for (i = 0; i < process; i++) {
+cnt = 0;
+b = P[i];
+for (j = 0; j < no_of_resources; j++) {
+need[b][j] = MAX[b][j] - allocated[b][j];
+if (need[b][j] <= availability[j])
+cnt++;
+}
+if (cnt == no_of_resources) {
+op[k++] = P[i];
+for (j = 0; j < no_of_resources; j++)
+availability[j] += allocated[b][j];
+} else
+P[++a] = P[i];
+}
+printf("< ");
+for (i = 0; i < process; i++) {
+printf("P[%d] ", op[i]);
+}
+printf(">");
+return 0;
+}
+
+
+Algo :
+
+1. Start by declaring and initializing the necessary variables and arrays:
+   - `k`, `a`, `b`: integer variables
+   - `instance[5]`, `availability[5]`, `allocated[10][5]`, `need[10][5]`, `MAX[10][5]`: arrays to store resource instances, allocation, and maximum requirement for each process
+   - `process`: number of processes
+   - `P[10]`: array to store process numbers
+   - `no_of_resources`: number of resources
+   - `cnt`: counter variable
+   - `i`, `j`: loop variables
+
+2. Read the number of resources from the user and initialize the availability array to zero. Also, read the maximum instances of each resource and store them in the `instance` array.
+
+3. Read the number of processes from the user.
+
+4. Read the allocation matrix for each process, where the user enters the allocated resources for each process. Also, update the availability array by adding the allocated resources.
+
+5. Read the maximum matrix, where the user enters the maximum requirement of resources for each process.
+
+6. Calculate the available resources by subtracting the allocated resources from the maximum instances of each resource.
+
+7. Initialize `a` to -1.
+
+8. Iterate over each process:
+   - Set `cnt` to 0.
+   - Set `b` to the current process number.
+   - Iterate over each resource:
+     - Calculate the need for each resource by subtracting the allocated resources from the maximum requirement.
+     - If the need is less than or equal to the available resources, increment `cnt`.
+   - If `cnt` is equal to the number of resources, it means all the resources needed by the process are available.
+     - Add the process number to the `op` array.
+     - Update the available resources by adding the allocated resources for that process.
+   - If `cnt` is not equal to the number of resources, it means some resources are not available.
+     - Move the process number to the `P` array at index `a+1`.
+
+9. Print the safe sequence by iterating over the `op` array and printing the process numbers.
+
+10. End the program.
+
+Note: The Banker's algorithm is used to avoid deadlock by ensuring that the system remains in a safe state where there is no possibility of deadlock. The algorithm checks if a process can be allocated the required resources without causing a deadlock. If all the processes can be allocated their resources, it means the system is in a safe state.
