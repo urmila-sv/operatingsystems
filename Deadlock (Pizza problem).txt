@@ -1,0 +1,110 @@
+Code :
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+pthread_mutex_t pizza_mutex;
+sem_t pizza_available, pizza_delivery;
+int students_count = 0;
+int pizza_slices = 8;
+
+void* pizza_delivery_thread(void* arg) {
+    while (1) {
+        sem_wait(&pizza_delivery);
+        sem_post(&pizza_available);
+        pthread_mutex_unlock(&pizza_mutex);
+        students_count = 0;
+        sem_init(&pizza_delivery, 0, 0);
+    }
+    pthread_exit(NULL);
+}
+
+void* student_thread(void* arg) {
+    while (1) {
+        pthread_mutex_lock(&pizza_mutex);
+        if (sem_trywait(&pizza_available) == 0) {
+            // Pick up a pizza slice and study while eating
+            printf("Student %ld picked up a pizza slice\n", (long) arg);
+            sleep(2); // Study while eating
+        } else {
+            students_count++;
+            if (students_count == 1) {
+                sem_post(&pizza_delivery);
+                pthread_mutex_unlock(&pizza_mutex);
+            } else {
+                pthread_mutex_unlock(&pizza_mutex);
+                sem_wait(&pizza_available);
+            }
+        }
+    }
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t student_threads[5];
+    pthread_t pizza_delivery_thread;
+
+    pthread_mutex_init(&pizza_mutex, NULL);
+    sem_init(&pizza_available, 0, pizza_slices);
+    sem_init(&pizza_delivery, 0, 0);
+
+    pthread_create(&pizza_delivery_thread, NULL, pizza_delivery_thread, NULL);
+
+    for (long i = 0; i < 5; i++) {
+        pthread_create(&student_threads[i], NULL, student_thread, (void*) i);
+    }
+
+    for (long i = 0; i < 5; i++) {
+        pthread_join(student_threads[i], NULL);
+    }
+
+    pthread_join(pizza_delivery_thread, NULL);
+
+    pthread_mutex_destroy(&pizza_mutex);
+    sem_destroy(&pizza_available);
+    sem_destroy(&pizza_delivery);
+
+    return 0;
+}
+
+Algo :
+
+1. Start by including the necessary header files and defining the required variables and synchronization primitives:
+   - `pizza_mutex`: a mutex lock to ensure exclusive access to the pizza.
+   - `pizza_available`: a semaphore to keep track of the number of available pizza slices.
+   - `pizza_delivery`: a semaphore to signal the pizza delivery thread when the pizza is exhausted.
+   - `students_count`: a counter to keep track of the number of students currently eating pizza.
+   - `pizza_slices`: the total number of pizza slices available in one pizza.
+
+2. Initialize the mutex lock, semaphores, and counters:
+   - Set the value of `pizza_mutex` to 1.
+   - Set the value of `pizza_available` to the initial number of pizza slices.
+   - Set the value of `pizza_delivery` to 0.
+   - Set the value of `students_count` to 0.
+
+3. Define the function for the pizza delivery thread:
+   - Wait on the `pizza_delivery` semaphore to indicate that the pizza is exhausted.
+   - Replenish the pizza by adding `pizza_slices` to the `pizza_available` semaphore.
+   - Signal the `pizza_mutex` to wake up any waiting students.
+   - Reset the `students_count` to 0.
+   - Reset the `pizza_delivery` semaphore to 0.
+   - Repeat the delivery process.
+
+4. Define the function for each student thread:
+   - Acquire the `pizza_mutex` lock to ensure exclusive access to the pizza.
+   - If there are no pizza slices available, increment the `students_count` to indicate that the student is waiting for the pizza delivery.
+   - If the student is the first to discover the pizza is exhausted, signal the `pizza_delivery` semaphore to wake up the pizza delivery thread.
+   - Release the `pizza_mutex` lock.
+   - Wait on the `pizza_available` semaphore to indicate that a pizza slice is available.
+   - Pick up a pizza slice and study while eating it.
+
+5. In the main function:
+   - Create multiple threads representing the students.
+   - Create a thread representing the pizza delivery.
+   - Each student thread should call the student function.
+   - The pizza delivery thread should call the pizza delivery function.
+   - Wait for all threads to complete using `pthread_join`.
+   - Return 0 to exit the program.

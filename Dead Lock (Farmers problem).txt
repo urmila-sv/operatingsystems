@@ -1,0 +1,105 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include<unistd.h>
+pthread_mutex_t mutex;
+pthread_cond_t n_cond;
+pthread_cond_t s_cond;
+int n_ready = 0; 
+int s_ready = 0;
+void* north(void* arg) 
+{ 
+ pthread_mutex_lock(&mutex);
+ while (s_ready<5) 
+ {
+ printf("Farmers Waiting at South tunbridge \n");
+ sleep(2);
+ }
+ 
+ completenorth((int*)arg);
+ s_ready = 0;
+ pthread_cond_signal(&s_cond);
+ pthread_mutex_unlock(&mutex);
+ pthread_exit(NULL);
+}
+void* south(void* arg) 
+{ 
+ pthread_mutex_lock(&mutex);
+ while (!n_ready) 
+ {
+ printf("Farmers Waiting at North tunbridge \n");
+ sleep(2);
+ }
+ completesouth((int)arg);
+ n_ready = 0;
+ pthread_cond_signal(&n_cond);
+ pthread_mutex_unlock(&mutex);
+ pthread_exit(NULL);
+}
+void completenorth(int id) 
+{
+ printf("Farmers %d at North tunbridge Started\n",id);
+ printf("Farmers Waiting at South tunbridge \n");
+ 
+}
+void completesouth(int id) 
+{
+ printf("Farmers %d at South tunbridge Started\n",id);
+ printf("Farmers Waiting at North tunbridge \n");
+}
+int main() 
+{
+ pthread_t nThread1, nThread2, sThread1, sThread2;
+ pthread_create(&nThread1, NULL, north, (void*)1);
+ pthread_create(&sThread1, NULL, south, (void*)1);
+ pthread_create(&nThread2, NULL, north, (void*)2);
+ pthread_create(&sThread2, NULL, south, (void*)2);
+ pthread_join(nThread1, NULL);
+ pthread_join(sThread1, NULL);
+ pthread_join(nThread2, NULL);
+ pthread_join(sThread2, NULL);
+ return 0;
+}
+
+Algo :
+
+1. Start by including the necessary header files and declaring the required variables and synchronization primitives:
+   - `pthread_mutex_t mutex`: a mutex to protect critical sections.
+   - `pthread_cond_t n_cond`: a condition variable for the north side.
+   - `pthread_cond_t s_cond`: a condition variable for the south side.
+   - `n_ready`: a flag to indicate if there are farmers ready on the north side.
+   - `s_ready`: a counter to keep track of the number of farmers ready on the south side.
+
+2. Define the function `north` that represents the behavior of farmers from the north side:
+   - Acquire the mutex lock.
+   - While the number of farmers ready on the south side is less than 5, wait and print a message indicating that farmers are waiting on the south side.
+   - Call the `completenorth` function to represent the action of farmers crossing the bridge from the north side.
+   - Reset the `s_ready` counter to 0.
+   - Signal the `s_cond` condition variable to wake up any waiting farmers on the south side.
+   - Release the mutex lock.
+   - Exit the thread.
+
+3. Define the function `south` that represents the behavior of farmers from the south side:
+   - Acquire the mutex lock.
+   - While the `n_ready` flag is false, wait and print a message indicating that farmers are waiting on the north side.
+   - Call the `completesouth` function to represent the action of farmers crossing the bridge from the south side.
+   - Reset the `n_ready` flag to 0.
+   - Signal the `n_cond` condition variable to wake up any waiting farmers on the north side.
+   - Release the mutex lock.
+   - Exit the thread.
+
+4. Define the `completenorth` function that represents the action of farmers crossing the bridge from the north side:
+   - Print a message indicating that farmers have started crossing the bridge from the north side.
+   - Print a message indicating that farmers are waiting on the south side.
+
+5. Define the `completesouth` function that represents the action of farmers crossing the bridge from the south side:
+   - Print a message indicating that farmers have started crossing the bridge from the south side.
+   - Print a message indicating that farmers are waiting on the north side.
+
+6. In the `main` function:
+   - Create four threads: `nThread1`, `nThread2`, `sThread1`, and `sThread2`, representing farmers from the north and south sides.
+   - Pass the thread number as an argument to each thread.
+   - Wait for all threads to complete using `pthread_join`.
+   - Return 0 to exit the program.
+
+Note: The code uses mutex and condition variables to synchronize the behavior of the farmers and ensure that they wait for their turn to cross the bridge.

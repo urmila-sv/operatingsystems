@@ -1,0 +1,93 @@
+Code :
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+pthread_mutex_t sequencer_mutex;
+sem_t event_count, order_ready;
+
+void* barista_thread(void* arg) {
+    while (1) {
+        sem_wait(&event_count);
+        // Serve the customer with the ticket number obtained
+        printf("Barista serving customer with ticket number: %d\n", sem_value(&event_count) + 1);
+        sem_post(&order_ready);
+    }
+    pthread_exit(NULL);
+}
+
+void* customer_thread(void* arg) {
+    int ticket_number;
+
+    pthread_mutex_lock(&sequencer_mutex);
+    ticket_number = sem_value(&event_count) + 1;
+    sem_post(&event_count);
+    pthread_mutex_unlock(&sequencer_mutex);
+
+    sem_wait(&order_ready);
+    // Place the order with the barista
+    printf("Customer with ticket number %d placing an order\n", ticket_number);
+
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t customer_threads[5];
+    pthread_t barista_thread;
+
+    pthread_mutex_init(&sequencer_mutex, NULL);
+    sem_init(&event_count, 0, 0);
+    sem_init(&order_ready, 0, 0);
+
+    pthread_create(&barista_thread, NULL, barista_thread, NULL);
+
+    for (int i = 0; i < 5; i++) {
+        pthread_create(&customer_threads[i], NULL, customer_thread, NULL);
+    }
+
+    for (int i = 0; i < 5; i++) {
+        pthread_join(customer_threads[i], NULL);
+    }
+
+    pthread_join(barista_thread, NULL);
+
+    pthread_mutex_destroy(&sequencer_mutex);
+    sem_destroy(&event_count);
+    sem_destroy(&order_ready);
+
+    return 0;
+}
+
+Algo :
+
+1. Start by including the necessary header files and defining the required variables and semaphores:
+   - `sequencer_mutex`: a mutex lock to ensure exclusive access to the sequencer.
+   - `event_count`: a semaphore to keep track of the lowest unserved ticket number.
+   - `order_ready`: a semaphore to signal the barista when a customer is ready to place an order.
+
+2. Initialize the mutex lock and semaphores:
+   - Set the value of `sequencer_mutex` to 1.
+   - Set the value of `event_count` to 0.
+   - Set the value of `order_ready` to 0.
+
+3. Define the function for the barista thread:
+   - Wait on the `event_count` semaphore to get the lowest unserved ticket number.
+   - Serve the customer with the ticket number obtained.
+   - Signal the `order_ready` semaphore to indicate that the customer can place an order.
+
+4. Define the function for the customer thread:
+   - Acquire the `sequencer_mutex` lock to ensure exclusive access to the sequencer.
+   - Increment the `event_count` semaphore to get the next ticket number.
+   - Release the `sequencer_mutex` lock.
+   - Wait on the `order_ready` semaphore to indicate that the barista is ready to take the order.
+   - Place the order with the barista.
+
+5. In the main function:
+   - Create multiple threads representing the customers.
+   - Create a thread representing the barista.
+   - Each customer thread should call the customer function.
+   - The barista thread should call the barista function.
+   - Wait for all threads to complete using `pthread_join`.
+   - Return 0 to exit the program.
