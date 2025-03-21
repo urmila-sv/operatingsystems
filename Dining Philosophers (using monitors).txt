@@ -1,0 +1,84 @@
+Code :
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<pthread.h>
+#include<semaphore.h>
+#include<unistd.h>
+
+pthread_mutex_t mutex;
+pthread_cond_t chopstick_cond[5];
+int chopstick[5] = {1, 1, 1, 1, 1};
+
+void pickup_chopsticks(int phil){
+    pthread_mutex_lock(&mutex);
+    while (chopstick[phil] == 0 || chopstick[(phil+1)%5] == 0){
+        pthread_cond_wait(&chopstick_cond[phil], &mutex);
+    }
+    chopstick[phil] = 0;
+    chopstick[(phil+1)%5] = 0;
+    printf("\nPhilosopher %d has picked up chopsticks", phil);
+    pthread_mutex_unlock(&mutex);
+}
+
+void putdown_chopsticks(int phil){
+    pthread_mutex_lock(&mutex);
+    chopstick[phil] = 1;
+    chopstick[(phil+1)%5] = 1;
+    printf("\nPhilosopher %d has put down chopsticks", phil);
+    pthread_cond_signal(&chopstick_cond[(phil+4)%5]);
+    pthread_cond_signal(&chopstick_cond[(phil+1)%5]);
+    pthread_mutex_unlock(&mutex);
+}
+
+void eat(int phil){
+    printf("\nPhilosopher %d is eating", phil);
+}
+
+void* philosopher(void * num){
+    int phil=*(int *)num;
+    while (1){
+        sleep(2);
+        pickup_chopsticks(phil);
+        eat(phil);
+        sleep(2);
+        putdown_chopsticks(phil);
+    }
+}
+
+int main(){
+    int i,a[5];
+    pthread_t tid[5];
+    pthread_mutex_init(&mutex, NULL);
+    for (i=0; i<5; i++){
+        pthread_cond_init(&chopstick_cond[i], NULL);
+    }
+    for (i=0; i<5; i++){
+        a[i]=i;
+        pthread_create(&tid[i], NULL, philosopher, (void *)&a[i]);
+    }
+    for (i=0; i<5; i++){
+        pthread_join(tid[i], NULL);
+    }
+    for (i=0; i<5; i++){
+        pthread_cond_destroy(&chopstick_cond[i]);
+    }
+    pthread_mutex_destroy(&mutex);
+    return 0;
+}
+
+Algo :
+
+Include the necessary header files stdio.h, stdlib.h, pthread.h, and semaphore.h.
+Declare global variables mutex, chopstick_cond, and chopstick.
+Define a function pickup_chopsticks() to acquire two chopsticks.
+Define a function putdown_chopsticks() to release two chopsticks.
+Define a function eat() to simulate a philosopher eating.
+Define the main function.
+Initialize the mutex mutex and the condition variables chopstick_cond.
+Create philosopher threads using the pthread_create() function.
+Wait for all philosopher threads to finish using the pthread_join() function.
+Destroy the mutex and condition variables using the pthread_mutex_destroy() and pthread_cond_destroy() functions.
+Exit the program with a return value of 0.
+
+In summary, this program implements a solution to the dining philosophers problem using monitors. The algorithm uses a mutex mutex to protect the shared chopsticks and an array of condition variables chopstick_cond to signal when a chopstick is available. Each philosopher runs in their own thread, which are created using the pthread_create() function, and they communicate with each other by acquiring and releasing chopsticks as they alternate between thinking and eating. The program avoids deadlock by ensuring that no two adjacent philosophers can acquire both chopsticks at the same time, and avoids starvation by allowing each philosopher to eat after a certain amount of time has passed.
