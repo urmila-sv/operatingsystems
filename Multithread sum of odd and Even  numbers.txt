@@ -1,0 +1,66 @@
+ Write a multithreaded program to compute and display the sum of
+ first N natural numbers, the sum of first N odd natural numbers and
+ the sum of first N even natural numbers
+
+
+#include <stdio.h>
+#include <pthread.h>
+int n;
+int sum_n = 0, sum_odd = 0, sum_even = 0;
+void *sum_natural(void *arg) {
+ int i;
+ for (i = 1; i <= n; i++) {
+ sum_n += i;
+ }
+ pthread_exit(NULL);
+}
+void *sum_odd_natural(void *arg) {
+ int i;
+ for (i = 1; i <= n; i += 2) {
+ sum_odd += i;
+ }
+ pthread_exit(NULL);
+}
+void *sum_even_natural(void *arg) {
+ int i;
+ for (i = 2; i <= n; i += 2) {
+ sum_even += i;
+ }
+ pthread_exit(NULL);
+}
+int main() {
+ printf("Enter the value of N: ");
+ scanf("%d", &n);
+ pthread_t tid1, tid2, tid3;
+ pthread_attr_t attr1, attr2, attr3;
+ pthread_attr_init(&attr1);
+ pthread_attr_init(&attr2);
+ pthread_attr_init(&attr3);
+ pthread_create(&tid1, &attr1, sum_natural, NULL);
+ pthread_create(&tid2, &attr2, sum_odd_natural, NULL);
+ pthread_create(&tid3, &attr3, sum_even_natural, NULL);
+ pthread_join(tid1, NULL);
+ pthread_join(tid2, NULL);
+ pthread_join(tid3, NULL);
+ printf("Sum of first %d natural numbers: %d\n", n, sum_n);
+ printf("Sum of first %d odd natural numbers: %d\n", n, sum_odd);
+ printf("Sum of first %d even natural numbers: %d\n", n, sum_even);
+ return 0;
+}
+
+Algo :
+
+Include the necessary header files stdio.h and pthread.h.
+Declare integer variables n, sum_n, sum_odd, and sum_even.
+Define three functions sum_natural(), sum_odd_natural(), and sum_even_natural() to calculate the sum of natural numbers, odd natural numbers, and even natural numbers respectively.
+In each of the three functions, use a for loop to calculate the sum of numbers as per the function name.
+Use the pthread_exit(NULL) function to exit each function.
+Define the main function.
+Prompt the user to enter the value of n.
+Declare three thread IDs tid1, tid2, and tid3.
+Declare three thread attribute variables attr1, attr2, and attr3.
+Initialize each of the thread attribute variables using the pthread_attr_init() function.
+Create three threads using the pthread_create() function with respective thread IDs, thread attributes, and function names as arguments.
+Wait for all three threads to finish using the pthread_join() function with respective thread IDs as arguments.
+Print the sum of first n natural numbers, sum of first n odd natural numbers, and sum of first n even natural numbers using the printf() function.
+Exit the program with a return value of 0.

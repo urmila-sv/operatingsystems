@@ -1,0 +1,31 @@
+Code :
+
+#!/bin/bash
+
+# Function to generate a random alphanumeric password
+generate_password() {
+    # Set the length of the password
+    local length=8
+
+    # Generate a random password using the characters a-z, A-Z, and 0-9
+    password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w $length | head -n 1)
+    echo $password
+}
+
+# Generate 10 random alphanumeric passwords
+for ((i=1; i<=10; i++))
+do
+    password=$(generate_password)
+    echo "Password $i: $password"
+done
+
+Algo :
+
+1. Define a function `generate_password` to generate a random alphanumeric password.
+2. Inside the function, set the length of the password (e.g., 8 characters).
+3. Use `/dev/urandom` to generate a random stream of characters.
+4. Use `tr` to delete all characters except the alphanumeric ones (a-z, A-Z, and 0-9).
+5. Use `fold` to wrap the characters into lines of the desired length.
+6. Use `head` to select the first line (i.e., the generated password).
+7. Print the generated password.
+8. In the main script, use a loop to generate and print 10 random alphanumeric passwords by calling the `generate_password` function.

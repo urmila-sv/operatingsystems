@@ -1,0 +1,106 @@
+write a C code where there are 3 threads in a queue P,Q,R which checks for palindrome, check for prime number, print sum of all odd integers in an array respectively. P,Q,R should execute one after another , achieve synchronization using semaphores.
+
+Code :
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+sem_t p_sem, q_sem, r_sem;
+sem_t p_done, q_done, r_done;
+
+void* thread_p(void* arg) {
+    while (1) {
+        sem_wait(&p_sem);
+        printf("Thread P: Checking for palindrome\n");
+        // Check for palindrome
+        sem_post(&q_sem);
+        sem_post(&p_done);
+    }
+    pthread_exit(NULL);
+}
+
+void* thread_q(void* arg) {
+    while (1) {
+        sem_wait(&q_sem);
+        printf("Thread Q: Checking for prime number\n");
+        // Check for prime number
+        sem_post(&r_sem);
+        sem_post(&q_done);
+    }
+    pthread_exit(NULL);
+}
+
+void* thread_r(void* arg) {
+    while (1) {
+        sem_wait(&r_sem);
+        printf("Thread R: Calculating sum of odd integers in an array\n");
+        // Calculate sum of odd integers in an array
+        sem_post(&p_sem);
+        sem_post(&r_done);
+    }
+    pthread_exit(NULL);
+}
+
+int main() {
+    pthread_t thread_p_id, thread_q_id, thread_r_id;
+
+    sem_init(&p_sem, 0, 1);
+    sem_init(&q_sem, 0, 0);
+    sem_init(&r_sem, 0, 0);
+    sem_init(&p_done, 0, 0);
+    sem_init(&q_done, 0, 0);
+    sem_init(&r_done, 0, 0);
+
+    pthread_create(&thread_p_id, NULL, thread_p, NULL);
+    pthread_create(&thread_q_id, NULL, thread_q, NULL);
+    pthread_create(&thread_r_id, NULL, thread_r, NULL);
+
+    pthread_join(thread_p_id, NULL);
+    pthread_join(thread_q_id, NULL);
+    pthread_join(thread_r_id, NULL);
+
+    sem_destroy(&p_sem);
+    sem_destroy(&q_sem);
+    sem_destroy(&r_sem);
+    sem_destroy(&p_done);
+    sem_destroy(&q_done);
+    sem_destroy(&r_done);
+
+    return 0;
+}
+
+Algo :
+
+1. Start by including the necessary header files and defining the required variables and semaphores:
+   - `p_sem`, `q_sem`, `r_sem`: semaphores to control the execution of threads P, Q, and R.
+   - `p_done`, `q_done`, `r_done`: semaphores to indicate the completion of threads P, Q, and R.
+
+2. Initialize the semaphores:
+   - Set the value of `p_sem` to 1 (to allow the execution of thread P initially) and `q_sem` and `r_sem` to 0.
+   - Set the value of `p_done`, `q_done`, and `r_done` to 0.
+
+3. Define the function for thread P:
+   - Wait on `p_sem` semaphore.
+   - Check for palindrome.
+   - Signal `q_sem` semaphore to allow the execution of thread Q.
+   - Signal `p_done` semaphore to indicate the completion of thread P.
+
+4. Define the function for thread Q:
+   - Wait on `q_sem` semaphore.
+   - Check for prime number.
+   - Signal `r_sem` semaphore to allow the execution of thread R.
+   - Signal `q_done` semaphore to indicate the completion of thread Q.
+
+5. Define the function for thread R:
+   - Wait on `r_sem` semaphore.
+   - Calculate the sum of all odd integers in an array.
+   - Signal `p_sem` semaphore to allow the execution of thread P again.
+   - Signal `r_done` semaphore to indicate the completion of thread R.
+
+6. In the main function:
+   - Create three threads representing threads P, Q, and R.
+   - Each thread should call its respective function.
+   - Wait for the completion of threads P, Q, and R using `sem_wait` on `p_done`, `q_done`, and `r_done` semaphores respectively.
+   - Return 0 to exit the program.
