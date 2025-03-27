@@ -1,0 +1,57 @@
+Code :
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+int flag[2] = {0, 0};
+int turn = 0;
+int shared_var = 0;
+
+void enter_critical_section(int thread_id){
+    int other_thread = 1 - thread_id;
+    flag[thread_id] = 1;
+    turn = other_thread;
+    while (flag[other_thread] == 1 && turn == other_thread);
+}
+
+void leave_critical_section(int thread_id){
+    flag[thread_id] = 0;
+}
+
+void* thread_function(void* arg){
+    int thread_id = *(int*)arg;
+    int i;
+    for (i=0; i<100000; i++){
+        enter_critical_section(thread_id);
+        shared_var++;
+        leave_critical_section(thread_id);
+    }
+}
+
+int main(){
+    pthread_t threads[2];
+    int thread_ids[2];
+    int i;
+    for (i=0; i<2; i++){
+        thread_ids[i] = i;
+        pthread_create(&threads[i], NULL, thread_function, &thread_ids[i]);
+    }
+    for (i=0; i<2; i++){
+        pthread_join(threads[i], NULL);
+    }
+    printf("Shared variable value: %d\n", shared_var);
+    return 0;
+}
+
+Algorithm :
+
+Declare global variables flag and turn.
+Define two functions enter_critical_section() and leave_critical_section() to implement the algorithm.
+Define the thread function to run each thread.
+In the main function, create an array of threads and an array of thread IDs.
+Create each thread using the pthread_create() function.
+Wait for each thread to finish using the pthread_join() function.
+Print the value of the shared variable.
+
+Note: Peterson's algorithm is used to ensure mutual exclusion between the two threads when accessing the shared variable.
