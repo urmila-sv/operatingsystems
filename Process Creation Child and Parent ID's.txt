@@ -1,0 +1,46 @@
+ Using the process creation check whether it is child or parent to create the 
+process and print the parent and child process ID’s (Using C Programming).
+
+CODE:-
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+int main()
+{
+ pid_t pid;
+ pid=fork();
+ printf("Before FORK - Process ID is %d \n",pid);
+ if(fork()<0)
+ {
+ printf("The Process is FAILED");
+ }
+ else if(pid==0)
+ {
+ printf("CHILD PROCESS: \n");
+ printf("PID of CHILD is %d \n",getpid());
+ printf("PID of PARENT is %d \n",getppid());
+ }
+ else
+ {
+ printf("PARENT PROCESS: \n");
+ printf("PID of PARENT is %d \n",getpid());
+ printf("PPID of PARENT is %d \n",getppid());
+ printf("PID of CHILD is %d \n",pid);
+ }
+ return 0;
+}
+
+ALgo:
+
+Include the necessary header files stdio.h, sys/types.h, and unistd.h.
+Define the main function.
+Declare a variable pid of type pid_t.
+Call the fork() function to create a new process.
+Print the process ID of the parent process before the fork() using printf() function.
+Check if the fork() function call was successful or not by comparing its return value with 0.
+If the fork() function call was unsuccessful, print an error message using printf() function.
+If the fork() function call was successful and the return value is 0, then it is the child process.
+Print the child process details such as its process ID and parent process ID using printf() function.
+If the fork() function call was successful and the return value is not 0, then it is the parent process.
+Print the parent process details such as its process ID, parent process ID, and child process ID using printf() function.
+Exit the program with a return value of 0.

@@ -1,0 +1,103 @@
+Code :
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define BUFFER_SIZE 10
+
+int buffer[BUFFER_SIZE];
+int in = 0, out = 0, count = 0;
+int flag[2] = {0, 0};
+int turn = 0;
+
+void enter_critical_section(int thread_id){
+    int other_thread = 1 - thread_id;
+    flag[thread_id] = 1;
+    turn = other_thread;
+    while (flag[other_thread] == 1 && turn == other_thread);
+}
+
+void leave_critical_section(int thread_id){
+    flag[thread_id] = 0;
+}
+
+void produce_item(int item){
+    buffer[in] = item;
+    in = (in + 1) % BUFFER_SIZE;
+    count++;
+}
+
+int consume_item(){
+    int item = buffer[out];
+    out = (out + 1) % BUFFER_SIZE;
+    count--;
+    return item;
+}
+
+void* producer(void* arg){
+    int num_items = *(int*)arg;
+    int i, item;
+    for (i=0; i<num_items; i++){
+        item = i+1;
+        enter_critical_section(0);
+        while (count == BUFFER_SIZE){
+            leave_critical_section(0);
+            enter_critical_section(0);
+        }
+        produce_item(item);
+        printf("Produced item %d\n", item);
+        leave_critical_section(0);
+        sleep(rand() % 2);
+    }
+}
+
+void* consumer(void* arg){
+    int num_items = *(int*)arg;
+    int i, item;
+    for (i=0; i<num_items; i++){
+        enter_critical_section(1);
+        while (count == 0){
+            leave_critical_section(1);
+            enter_critical_section(1);
+        }
+        item = consume_item();
+        printf("Consumed item %d\n", item);
+        leave_critical_section(1);
+        sleep(rand() % 2);
+    }
+}
+
+int main(){
+    int buffer_size, num_produce, num_consume;
+    printf("Enter buffer size: ");
+    scanf("%d", &buffer_size);
+    printf("Enter number of items to produce: ");
+    scanf("%d", &num_produce);
+    printf("Enter number of items to consume: ");
+    scanf("%d", &num_consume);
+
+    BUFFER_SIZE = buffer_size;
+
+    pthread_t producer_thread, consumer_thread;
+    pthread_create(&producer_thread, NULL, producer, &num_produce);
+    pthread_create(&consumer_thread, NULL, consumer, &num_consume);
+
+    pthread_join(producer_thread, NULL);
+    pthread_join(consumer_thread, NULL);
+
+    return 0;
+}
+
+
+ALgorithm :
+
+Declare global variables flag and turn.
+Define two functions enter_critical_section() and leave_critical_section() to implement the algorithm.
+Define the producer function and the consumer function to run each thread.
+In the main function, read the buffer size, number of items to produce, and number of items to consume from the user.
+Create two threads using the pthread_create() function: one for the producer and one for the consumer.
+Wait for each thread to finish using the pthread_join() function.
+Print a message indicating that the program has ended.
+
+Note: Peterson's algorithm is used to ensure mutual exclusion between the producer and consumer processes when accessing the buffer.
