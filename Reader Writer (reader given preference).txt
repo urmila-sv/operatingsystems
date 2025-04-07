@@ -1,0 +1,74 @@
+Reader Writer’s Problem
+
+ CODE:-
+#include <pthread.h>
+#include <semaphore.h>
+#include <stdio.h>
+sem_t wrt;
+pthread_mutex_t mutex;
+int cnt = 1;
+int numreader = 0;
+void *writer(void *wno)
+{ 
+ sem_wait(&wrt);
+ cnt = cnt*2;
+ printf("Writer %d modified cnt to %d\n",(*((int *)wno)),cnt);
+ sem_post(&wrt);
+}
+void *reader(void *rno)
+{ 
+ // Reader acquire the lock before modifying numreader
+ pthread_mutex_lock(&mutex);
+ numreader++;
+ if(numreader == 1) {
+ sem_wait(&wrt); // If this id the first reader, then it will block the writer
+ }
+ pthread_mutex_unlock(&mutex);
+ // Reading Section
+ printf("Reader %d: read cnt as %d\n",*((int *)rno),cnt);
+ // Reader acquire the lock before modifying numreader
+ pthread_mutex_lock(&mutex);
+ numreader--;
+ if(numreader == 0) {
+ sem_post(&wrt); // If this is the last reader, it will wake up the writer.
+ }
+ pthread_mutex_unlock(&mutex);
+}
+int main()
+{ 
+ pthread_t read[10],write[5];
+ pthread_mutex_init(&mutex, NULL);
+ sem_init(&wrt,0,1);
+ int a[10] = {1,2,3,4,5,6,7,8,9,10}; //Just used for numbering the producer and consumer
+ for(int i = 0; i < 10; i++) {
+ pthread_create(&read[i], NULL, (void *)reader, (void *)&a[i]);
+ }
+ for(int i = 0; i < 5; i++) {
+ pthread_create(&write[i], NULL, (void *)writer, (void *)&a[i]);
+ }
+ for(int i = 0; i < 10; i++) {
+ pthread_join(read[i], NULL);
+ }
+ for(int i = 0; i < 5; i++) {
+ pthread_join(write[i], NULL);
+ }
+ pthread_mutex_destroy(&mutex);
+ sem_destroy(&wrt);
+ return 0;
+}
+
+
+Algo :
+
+Include the necessary header files pthread.h and semaphore.h.
+Declare a semaphore wrt and a mutex mutex.
+Declare integer variables cnt and numreader and initialize cnt to 1 and numreader to 0.
+Define a function writer() to modify the shared resource.
+Define a function reader() to read the shared resource.
+Define the main function.
+Create 10 reader threads and 5 writer threads using the pthread_create() function.
+Wait for all reader threads and writer threads to finish using the pthread_join() function.
+Destroy the mutex and semaphore using the pthread_mutex_destroy() and sem_destroy() functions.
+Exit the program with a return value of 0.
+
+In summary, this Reader-Writer code allows multiple readers to access a shared resource simultaneously, but only one writer can access it at a time. The algorithm uses a mutex lock to control access to the numreader variable, which keeps track of the number of active readers, and a semaphore to control access to the shared resource by writers. When a writer wants to modify the shared resource, it has to wait until all readers have finished reading.

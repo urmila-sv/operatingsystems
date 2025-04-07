@@ -1,0 +1,148 @@
+Code :
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+pthread_mutex_t mutex;
+pthread_cond_t full_cond, empty_cond;
+int *buf,buf_pos=-1,prod_count,con_count,buf_len;
+
+void produce(int item){
+    buf_pos++;
+    *(buf + buf_pos) = item;
+}
+
+int consume(){
+    int item = *(buf + buf_pos);
+    buf_pos--;
+    return item;
+}
+
+void insert_item(int item){
+    if (buf_pos == buf_len - 1){
+        pthread_cond_wait(&empty_cond, &mutex);
+    }
+    produce(item);
+    printf("Produced item %d\n", item);
+    if (buf_pos == 0){
+        pthread_cond_broadcast(&full_cond);
+    }
+}
+
+int remove_item(){
+    if (buf_pos == -1){
+        pthread_cond_wait(&full_cond, &mutex);
+    }
+    int item = consume();
+    printf("Consumed item %d\n", item);
+    if (buf_pos == buf_len - 2){
+        pthread_cond_broadcast(&empty_cond);
+    }
+    return item;
+}
+
+void* producer(void *args){
+    int item;
+    while(1){
+        item = 1 + rand()%40;
+        pthread_mutex_lock(&mutex);
+        insert_item(item);
+        pthread_mutex_unlock(&mutex);
+        sleep(1 + rand()%3);
+    }
+}
+
+void* consumer(void *args){
+    int item;
+    while(1){
+        pthread_mutex_lock(&mutex);
+        item = remove_item();
+        pthread_mutex_unlock(&mutex);
+        sleep(1+rand()%5);
+    }
+}
+
+int main(void){
+    int i,err;
+    srand(time(NULL));
+    pthread_mutex_init(&mutex, NULL);
+    pthread_cond_init(&full_cond, NULL);
+    pthread_cond_init(&empty_cond, NULL);
+    printf("Enter the number of Producers:");
+    scanf("%d",&prod_count);
+    printf("Enter the number of Consumers:");
+    scanf("%d",&con_count);
+    printf("Enter buffer capacity:");
+    scanf("%d",&buf_len);
+    buf = (int*) malloc(buf_len*sizeof(int));
+    pthread_t producers[prod_count];
+    pthread_t consumers[con_count];
+    
+    for(i=0; i<prod_count; i++){
+        err = pthread_create(&producers[i], NULL, producer, NULL);
+        if (err != 0){
+            printf("\nError creating producer thread %d: %s\n", i, strerror(err));
+            exit(-1);
+        }
+    }
+    
+    for(i=0; i<con_count; i++){
+        err = pthread_create(&consumers[i], NULL, consumer, NULL);
+        if (err != 0){
+            printf("\nError creating consumer thread %d: %s\n", i, strerror(err));
+            exit(-1);
+        }
+    }
+    
+    for(i=0; i<prod_count; i++){
+        err = pthread_join(producers[i], NULL);
+        if (err != 0){
+            printf("\nError joining producer thread %d: %s\n", i, strerror(err));
+            exit(-1);
+        }
+    }
+    
+    for(i=0; i<con_count; i++){
+        err = pthread_join(consumers[i], NULL);
+        if (err != 0){
+            printf("\nError joining consumer thread %d: %s\n", i, strerror(err));
+            exit(-1);
+        }
+    }
+
+    pthread_mutex_destroy(&mutex);
+    pthread_cond_destroy(&full_cond);
+    pthread_cond_destroy(&empty_cond);
+    
+    free(buf);
+
+    return 0;
+}
+
+Algo :
+
+Include the necessary header files stdio.h, stdlib.h, time.h, string.h, unistd.h, pthread.h, and semaphore.h.
+Declare global variables mutex, full_cond, empty_cond, buf, buf_pos, prod_count, con_count, and buf_len.
+Define a function produce() to add an item to the buffer.
+Define a function consume() to remove an item from the buffer.
+Define a function insert_item() to insert an item into the buffer using a monitor.
+Define a function remove_item() to remove an item from the buffer using a monitor.
+Define a function producer() to run the producer thread.
+Define a function consumer() to run the consumer thread.
+Define the main function.
+Initialize the mutex mutex and condition variables full_cond and empty_cond.
+Read the number of producers, consumers, and buffer capacity from the user.
+Allocate memory for the buffer buf.
+Create producer threads using the pthread_create() function.
+Create consumer threads using the pthread_create() function.
+Wait for all producer threads and consumer threads to finish using the pthread_join() function.
+Destroy the mutex and condition variables using the pthread_mutex_destroy() and pthread_cond_destroy() functions.
+Free the memory allocated for the buffer.
+Exit the program with a return value of 0.
+
+In summary, this modified program uses monitors to implement a solution to the producer-consumer problem using threads. The algorithm uses a mutex to protect the shared buffer and two condition variables to signal when the buffer is empty or full. The producers and consumers each run in their own threads, which are created using the pthread_create() function, and they communicate with each other by adding and removing items from the shared buffer using monitor procedures that can only be accessed by one thread at a time.
